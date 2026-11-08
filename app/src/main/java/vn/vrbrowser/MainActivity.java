@@ -145,16 +145,25 @@ public class MainActivity extends Activity implements SensorEventListener {
         // Hướng "lên" của màn hình theo chiều xoay ngang
         int r = getWindowManager().getDefaultDisplay().getRotation();
         float ux, uy, uz;
-        if (r == Surface.ROTATION_90) { ux = -rot[0]; uy = -rot[3]; uz = -rot[6]; }
-        else if (r == Surface.ROTATION_270) { ux = rot[0]; uy = rot[3]; uz = rot[6]; }
+        // Xoay ngang 90°: cạnh phải của máy (+X) hướng lên; 270°: cạnh trái (-X)
+        if (r == Surface.ROTATION_90) { ux = rot[0]; uy = rot[3]; uz = rot[6]; }
+        else if (r == Surface.ROTATION_270) { ux = -rot[0]; uy = -rot[3]; uz = -rot[6]; }
         else { ux = rot[1]; uy = rot[4]; uz = rot[7]; }
         // Vector phải nằm ngang và vector lên không nghiêng
         float rx = ly, ry = -lx, rlen = (float) Math.sqrt(rx * rx + ry * ry);
         if (rlen > 1e-4f) { rx /= rlen; ry /= rlen; }
         float cux = ry * lz, cuy = -rx * lz, cuz = rx * ly - ry * lx; // right x look
         float nr = (float) Math.atan2(ux * rx + uy * ry, ux * cux + uy * cuy + uz * cuz);
-        yaw = ny; pitch = np; roll = nr;
-        if (Float.isNaN(yaw0)) yaw0 = ny;
+        if (Float.isNaN(yaw0)) { yaw0 = ny; yaw = ny; pitch = np; roll = nr; return; }
+        // Làm mượt để hình đứng yên, không rung
+        final float k = 0.35f;
+        float dy = ny - yaw;
+        while (dy > Math.PI) dy -= 2 * Math.PI;
+        while (dy < -Math.PI) dy += 2 * Math.PI;
+        float dr = nr - roll;
+        while (dr > Math.PI) dr -= 2 * Math.PI;
+        while (dr < -Math.PI) dr += 2 * Math.PI;
+        yaw += k * dy; pitch += k * (np - pitch); roll += k * dr;
     }
     @Override public void onAccuracyChanged(Sensor s, int a) {}
 
